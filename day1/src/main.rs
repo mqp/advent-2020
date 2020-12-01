@@ -19,7 +19,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                 println!("Result is: {}", n0 * n1 * candidate);
                 return Ok(());
             }
-
         }
     }
     Ok(())
