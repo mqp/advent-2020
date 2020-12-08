@@ -31,6 +31,17 @@ fn parse_instruction(text: &str) -> Result<Instruction, Box<dyn Error>> {
     }
 }
 
+fn parse_program(program: &str) -> Result<Vec<Instruction>, Box<dyn Error>> {
+    let mut result = Vec::new();
+    for line in program.split("\n") {
+        match parse_instruction(line) {
+            Ok(instr) => { result.push(instr); }
+            Err(e) => { return Err(From::from(format!("Failed to parse instruction {}: {}", line, e))); }
+        }
+    }
+    Ok(result)
+}
+
 #[derive(Debug)]
 struct VM {
     pc: usize,
@@ -41,8 +52,6 @@ struct VM {
 impl VM {
 
     pub fn run(self: &mut Self) -> Result<Word, Box<dyn Error>> {
-        self.pc = 0;
-        self.acc = 0;
         let mut visited_pcs = HashSet::new();
         loop {
             if visited_pcs.contains(&self.pc) {
@@ -75,21 +84,13 @@ impl VM {
 fn main() -> Result<(), Box<dyn Error>> {
     let mut input = String::new();
     io::stdin().read_to_string(&mut input)?;
-    let mut instructions = Vec::new();
-    for line in input.trim().split("\n") {
-        instructions.push(parse_instruction(line)?);
-    }
+    let instructions = parse_program(input.trim())?;
     for i in 0..instructions.len() {
-        let mut mem = instructions.clone();
-        mem[i] = match mem[i] {
+        let mut vm = VM { pc: 0, acc: 0, mem: instructions.clone() };
+        vm.mem[i] = match vm.mem[i] {
             Instruction::Acc(n) => Instruction::Acc(n),
             Instruction::Jmp(n) => Instruction::Nop(n),
             Instruction::Nop(n) => Instruction::Jmp(n)
-        };
-        let mut vm = VM {
-            pc: 0,
-            acc: 0,
-            mem
         };
         match vm.run() {
             Ok(result) => println!("Result: {:?}", result),
